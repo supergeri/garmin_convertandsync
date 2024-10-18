@@ -79,4 +79,4 @@ Follow these steps to set up the project locally:
 
 3. **Run the program:**
     ```bash
-    python -m garmin_plan sampleInput.yaml
+    python -m garmin_planner sampleInput.yaml
