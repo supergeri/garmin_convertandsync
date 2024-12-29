@@ -135,7 +135,7 @@ def scheduleWorkouts(startfrom: datetime, workouts: dict, conn: Client):
 
         workoutId = workoutMap[toScheduleWorkout]
         dateJson = {"date": currentDate.strftime(DATE_FORMAT)}
-        success = conn.postScheduleWorkout(workoutId, dateJson)
+        success = conn.scheduleWorkout(workoutId, dateJson)
         if (success):
             logger.info(f"""Scheduled workout {toScheduleWorkout} on date {currentDate}""")
         else:

@@ -59,4 +59,5 @@ docs/_build/
 target/
 
 # session
-session.pkl
+.garth/oauth1_token.json
+.garth/oauth2_token.json

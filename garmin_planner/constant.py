@@ -1,17 +1,6 @@
-from typing import Final
 from enum import Enum
 
-# URLS
-POST_LOGIN_URL: Final[str] = "https://sso.garmin.com/portal/api/login?clientId=GarminConnect&locale=en-US&service=https%3A%2F%2Fconnect.garmin.com%2Fmodern"
-GET_HOME_URL: Final[str] = "https://connect.garmin.com/modern"
-POST_EXCHANGE_URL: Final[str] = "https://connect.garmin.com/modern/di-oauth/exchange"
-POST_REFRESH_URL: Final[str] = "https://connect.garmin.com/services/auth/token/refresh"
-POST_CREATE_WORKOUT_URL: Final[str] = "https://connect.garmin.com/workout-service/workout"
-POST_SCHEDULE_WORKOUT_URL: Final[str] = "https://connect.garmin.com/workout-service/schedule"
-GET_ALL_WORKOUT_URL: Final[str] = "https://connect.garmin.com/workout-service/workouts?start=1&limit=999&myWorkoutsOnly=true&sharedWorkoutsOnly=false&orderBy=WORKOUT_NAME&orderSeq=ASC&includeAtp=false"
-DELETE_WORKOUT_URL: Final[str] = "https://connect.garmin.com/workout-service/workout"
-
-# A constnat used to convert pace to certain value recognised by garmin connect
+# A constant used to convert pace to certain value recognized by Garmin Connect
 PACE_CONST = 16.66666
 
 DATE_FORMAT = "%Y-%m-%d"
