@@ -44,10 +44,10 @@ class Client(object):
         return resJson
     
     def login(self) -> bool:
-        garth.resume(SESSION_DIR)
         try:
+            garth.resume(SESSION_DIR)
             garth.client.username
-        except GarthException:
+        except (FileNotFoundError, GarthException):
             garth.login(self._email, self._password)
             garth.save(SESSION_DIR)
         return True
