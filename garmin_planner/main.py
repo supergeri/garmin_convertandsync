@@ -156,18 +156,24 @@ def main():
 
     logger.info(f"Current working directory: {os.getcwd()}")
 
-    # deafault settings
+    # default settings
     settings = {"deleteSameNameWorkout": False}
 
-    data = parseYaml(file_path)
-
-    if ("email" not in data) or ("password" not in data):
+    # preprocess secrets yaml file and get email and password
+    secrets = parseYaml(os.path.join(current_dir, "secrets.yaml"))
+    if not secrets:
+        logger.error("Failed to parse secrets.yaml")
+        sys.exit("Exiting: secrets.yaml not found.")
+    if ("email" not in secrets) or ("password" not in secrets):
         logger.error("Missing 'email' or 'password' in YAML input.")
         sys.exit("Exiting: 'email' or 'password' not found.")
 
-    email = data['email']
-    password = data['password']
+    email = secrets['email']
+    password = secrets['password']
     garminCon = Client(email,password)
+
+    # parse input yaml file
+    data = parseYaml(file_path)
 
     # settings
     if "settings" in data:
