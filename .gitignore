@@ -61,3 +61,8 @@ target/
 # session
 .garth/oauth1_token.json
 .garth/oauth2_token.json
+
+# secrets files
+secrets.yaml
+**/secrets.yaml
+.DS_Store
