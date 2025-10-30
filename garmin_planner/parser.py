@@ -18,9 +18,9 @@ def parseYaml(filename: str):
     
 
 def parse_bracket(string):
-    match = re.match(r'([\w@]+)(?:\(([^()]+)\))?', string.lower())
+    match = re.match(r'([\w@ ]+)(?:\(([^()]+)\))?', string.lower())
     if match:
-        key = match.group(1)  
+        key = match.group(1).strip()  # Remove extra whitespace
         value = match.group(2)      
         return key, value
     return None, None
@@ -33,6 +33,7 @@ def parse_time_to_minutes(time_string):
 def parse_stepdetail(string):
     stepDetails = {}
     details = string.split(" ")
+    prev_detail = None
     for detail in details:
         try:
             # Duration
@@ -73,6 +74,20 @@ def parse_stepdetail(string):
                         'endConditionValue': 1
                     })
                 continue
+            
+            ## Repetitions
+            if ("reps" in detail):
+                # Check if previous detail was a number
+                if prev_detail:
+                    try:
+                        reps = int(prev_detail)
+                        stepDetails.update({
+                                'endCondition': ConditionType.REPS,  # Reps use REPS condition
+                                'endConditionValue': reps
+                            })
+                    except ValueError:
+                        pass
+                continue
 
             # Target
             if ("@" in detail):
@@ -105,5 +120,7 @@ def parse_stepdetail(string):
         except Exception as e:
             logger.error(e)
             continue
+        
+        prev_detail = detail
 
     return stepDetails
