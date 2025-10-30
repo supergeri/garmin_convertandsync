@@ -17,6 +17,9 @@ class WorkoutStep:
     zoneNumber: Optional[int] = None # This needed when target = zone based
     targetValueUnit: Optional[str] = None
     stepAudioNote: Optional[str] = None
+    childStepId: Optional[int] = None  # Needed for exercises within repeats
+    category: Optional[str] = None  # Exercise category (e.g., "SQUAT", "CARDIO")
+    exerciseName: Optional[str] = None  # Exercise name (e.g., "GOBLET_SQUAT")
 
 @dataclass
 class RepeatStep:

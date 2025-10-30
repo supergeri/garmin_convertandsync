@@ -12,6 +12,11 @@ class SportType(Enum):
       "sportTypeKey": "running",
       "displayOrder": 1
     }
+    STRENGTH = {
+      "sportTypeId": 5,
+      "sportTypeKey": "strength_training",
+      "displayOrder": 5
+    }
 
     def to_dict(self):
         return self.value
@@ -54,6 +59,21 @@ class StepType(Enum):
         "stepTypeKey": "repeat",
         "displayOrder": 6
     }
+    EXERCISE = {
+        "stepTypeId": 7,
+        "stepTypeKey": "exercise",
+        "displayOrder": 7
+    }
+    REST = {
+        "stepTypeId": 5,
+        "stepTypeKey": "rest",
+        "displayOrder": 5
+    }
+    CARDIO = {
+        "stepTypeId": 9,
+        "stepTypeKey": "cardio",
+        "displayOrder": 9
+    }
 
     def to_dict(self):
         return self.value
@@ -83,6 +103,12 @@ class ConditionType(Enum):
         "conditionTypeKey": "iterations",
         "displayOrder": 7,
         "displayable": False
+    }
+    REPS = {
+        "conditionTypeId": 10,
+        "conditionTypeKey": "reps",
+        "displayOrder": 10,
+        "displayable": True
     }
 
     def to_dict(self):
