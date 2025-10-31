@@ -188,6 +188,227 @@ class TestWorkoutStepCreation:
         assert result.stepType == StepType.INTERVAL
         assert result.exerciseName == '_30_DEGREE_LAT_PULLDOWN'
         assert result.category == 'PULL_UP'
+    
+    def test_bulgarian_split_squat_category(self):
+        from garmin_planner.main import createWorkoutStep
+        from garmin_planner.constant import StepType, ConditionType
+        
+        step = {"Dumbbell Bulgarian Split Squat": "10 reps"}
+        step_count = [0]
+        result = createWorkoutStep(step, step_count)
+        
+        assert result.stepType == StepType.INTERVAL
+        assert result.exerciseName == 'DUMBBELL_BULGARIAN_SPLIT_SQUAT'
+        assert result.category == 'LUNGE'
+        assert result.endCondition == ConditionType.REPS
+        assert result.endConditionValue == 10
+    
+    def test_good_morning_category(self):
+        from garmin_planner.main import createWorkoutStep
+        from garmin_planner.constant import StepType, ConditionType
+        
+        step = {"Bar Good Morning": "12 reps"}
+        step_count = [0]
+        result = createWorkoutStep(step, step_count)
+        
+        assert result.stepType == StepType.INTERVAL
+        assert result.exerciseName == 'BAR_GOOD_MORNING'
+        assert result.category == 'LEG_CURL'
+        assert result.endCondition == ConditionType.REPS
+        assert result.endConditionValue == 12
+    
+    def test_clean_and_jerk_category(self):
+        from garmin_planner.main import createWorkoutStep
+        from garmin_planner.constant import StepType, ConditionType
+        
+        step = {"Dumbbell Power Clean and Jerk": "lap | 6 reps"}
+        step_count = [0]
+        result = createWorkoutStep(step, step_count)
+        
+        assert result.stepType == StepType.INTERVAL
+        assert result.exerciseName == 'DUMBBELL_POWER_CLEAN_AND_JERK'
+        assert result.category == 'OLYMPIC_LIFT'
+        assert result.endCondition == ConditionType.LAP_BUTTON
+        assert result.description == "6 reps"
+    
+    def test_medicine_ball_slam_category(self):
+        from garmin_planner.main import createWorkoutStep
+        from garmin_planner.constant import StepType, ConditionType
+        
+        step = {"Medicine Ball Slam": "lap | Kneeling x 8"}
+        step_count = [0]
+        result = createWorkoutStep(step, step_count)
+        
+        assert result.stepType == StepType.INTERVAL
+        assert result.exerciseName == 'MEDICINE_BALL_SLAM'
+        assert result.category == 'PLYO'
+        assert result.endCondition == ConditionType.LAP_BUTTON
+        assert result.description == "Kneeling x 8"
+    
+    def test_ski_moguls_category(self):
+        from garmin_planner.main import createWorkoutStep
+        from garmin_planner.constant import StepType, ConditionType
+        
+        step = {"Ski Moguls": "200m"}
+        step_count = [0]
+        result = createWorkoutStep(step, step_count)
+        
+        assert result.stepType == StepType.INTERVAL
+        assert result.exerciseName == 'SKI_MOGULS'
+        assert result.category == 'CARDIO'
+        assert result.endCondition == ConditionType.DISTANCE
+        assert result.endConditionValue == 200
+    
+    def test_pike_pushup_category(self):
+        from garmin_planner.main import createWorkoutStep
+        from garmin_planner.constant import StepType, ConditionType
+        
+        step = {"Pike Push-up": "8 reps"}
+        step_count = [0]
+        result = createWorkoutStep(step, step_count)
+        
+        assert result.stepType == StepType.INTERVAL
+        assert result.exerciseName == 'PIKE_PUSH_UP'
+        assert result.category == 'PUSH_UP'
+        assert result.endCondition == ConditionType.REPS
+        assert result.endConditionValue == 8
+    
+    def test_inverted_row_category(self):
+        from garmin_planner.main import createWorkoutStep
+        from garmin_planner.constant import StepType, ConditionType
+        
+        step = {"TRX Inverted Row": "12 reps"}
+        step_count = [0]
+        result = createWorkoutStep(step, step_count)
+        
+        assert result.stepType == StepType.INTERVAL
+        assert result.exerciseName == 'TRX_INVERTED_ROW'
+        assert result.category == 'ROW'
+        assert result.endCondition == ConditionType.REPS
+        assert result.endConditionValue == 12
+    
+    def test_row_category(self):
+        from garmin_planner.main import createWorkoutStep
+        from garmin_planner.constant import StepType, ConditionType
+        
+        step = {"Bent-over Row": "10 reps"}
+        step_count = [0]
+        result = createWorkoutStep(step, step_count)
+        
+        assert result.stepType == StepType.INTERVAL
+        assert result.exerciseName == 'BENT_OVER_ROW'
+        assert result.category == 'ROW'
+        assert result.endCondition == ConditionType.REPS
+        assert result.endConditionValue == 10
+    
+    def test_reps_only_without_lap_button(self):
+        from garmin_planner.main import createWorkoutStep
+        from garmin_planner.constant import StepType, ConditionType
+        
+        step = {"Dumbbell Bulgarian Split Squat": "10 reps"}
+        step_count = [0]
+        result = createWorkoutStep(step, step_count)
+        
+        assert result.stepType == StepType.INTERVAL
+        assert result.endCondition == ConditionType.REPS
+        assert result.endConditionValue == 10
+        # Should NOT have lap button when only reps specified
+        assert result.endCondition != ConditionType.LAP_BUTTON
+    
+    def test_distance_based_end_condition(self):
+        from garmin_planner.main import createWorkoutStep
+        from garmin_planner.constant import StepType, ConditionType
+        
+        step = {"Ski Moguls": "200m"}
+        step_count = [0]
+        result = createWorkoutStep(step, step_count)
+        
+        assert result.stepType == StepType.INTERVAL
+        assert result.endCondition == ConditionType.DISTANCE
+        assert result.endConditionValue == 200
+        # Should NOT have lap button when distance specified
+        assert result.endCondition != ConditionType.LAP_BUTTON
+    
+    def test_full_hyrox_week5_workout_structure(self):
+        """Test the complete HYROX Week 5 workout with all 4 supersets"""
+        steps = [
+            {"warmup": [
+                {"cardio": "lap"}
+            ]},
+            {"repeat(3)": [
+                {"30-degree Lat Pull-down": "lap | Straight Arm Pull down x 10"},
+                {"Goblet Squat": "lap | KB RDL Into Goblet Squat x10"},
+                {"Kettlebell Floor to Shelf": "lap | KB Bottoms Up Press x8 each side"},
+                {"rest": "lap"}
+            ]},
+            {"repeat(3)": [
+                {"Incline Dumbbell Bench Press": "lap | 8 reps"},
+                {"Dumbbell Power Clean and Jerk": "lap | 6 reps"},
+                {"Dumbbell Bulgarian Split Squat": "10 reps"},
+                {"rest": "lap"}
+            ]},
+            {"repeat(3)": [
+                {"Bar Good Morning": "12 reps"},
+                {"TRX Inverted Row": "12 reps"},
+                {"rest": "lap"}
+            ]},
+            {"repeat(3)": [
+                {"Medicine Ball Slam": "lap | Kneeling x 8"},
+                {"Ski Moguls": "200m"},
+                {"Pike Push-up": "8 reps"},
+                {"rest": "lap"}
+            ]}
+        ]
+        
+        json_result = createWorkoutJson("fullhyroxweek5", steps)
+        workout_dict = json.loads(json_result)
+        
+        assert workout_dict['workoutName'] == 'fullhyroxweek5'
+        assert workout_dict['sportType']['sportTypeKey'] == 'strength_training'
+        
+        workout_steps = workout_dict['workoutSegments'][0]['workoutSteps']
+        
+        # Check warmup
+        assert workout_steps[0]['stepType']['stepTypeKey'] == 'warmup'
+        assert workout_steps[0]['category'] == 'CARDIO'
+        
+        # Check all 4 repeats exist
+        assert len([s for s in workout_steps if s.get('stepType', {}).get('stepTypeKey') == 'repeat']) == 4
+        
+        # Check first repeat (superset 1)
+        repeat1 = workout_steps[1]
+        assert repeat1['numberOfIterations'] == 3
+        assert repeat1['workoutSteps'][0]['exerciseName'] == '_30_DEGREE_LAT_PULLDOWN'
+        assert repeat1['workoutSteps'][0]['category'] == 'PULL_UP'
+        assert repeat1['workoutSteps'][1]['exerciseName'] == 'GOBLET_SQUAT'
+        assert repeat1['workoutSteps'][1]['category'] == 'SQUAT'
+        
+        # Check second repeat (superset 2)
+        repeat2 = workout_steps[2]
+        assert repeat2['workoutSteps'][0]['exerciseName'] == 'INCLINE_DUMBBELL_BENCH_PRESS'
+        assert repeat2['workoutSteps'][0]['category'] == 'BENCH_PRESS'
+        assert repeat2['workoutSteps'][1]['exerciseName'] == 'DUMBBELL_POWER_CLEAN_AND_JERK'
+        assert repeat2['workoutSteps'][1]['category'] == 'OLYMPIC_LIFT'
+        assert repeat2['workoutSteps'][2]['exerciseName'] == 'DUMBBELL_BULGARIAN_SPLIT_SQUAT'
+        assert repeat2['workoutSteps'][2]['category'] == 'LUNGE'
+        
+        # Check third repeat (superset 3)
+        repeat3 = workout_steps[3]
+        assert repeat3['workoutSteps'][0]['exerciseName'] == 'BAR_GOOD_MORNING'
+        assert repeat3['workoutSteps'][0]['category'] == 'LEG_CURL'
+        assert repeat3['workoutSteps'][1]['exerciseName'] == 'TRX_INVERTED_ROW'
+        assert repeat3['workoutSteps'][1]['category'] == 'ROW'
+        
+        # Check fourth repeat (superset 4)
+        repeat4 = workout_steps[4]
+        assert repeat4['workoutSteps'][0]['exerciseName'] == 'MEDICINE_BALL_SLAM'
+        assert repeat4['workoutSteps'][0]['category'] == 'PLYO'
+        assert repeat4['workoutSteps'][1]['exerciseName'] == 'SKI_MOGULS'
+        assert repeat4['workoutSteps'][1]['category'] == 'CARDIO'
+        assert repeat4['workoutSteps'][1]['endCondition']['conditionTypeKey'] == 'distance'
+        assert repeat4['workoutSteps'][1]['endConditionValue'] == 200
+        assert repeat4['workoutSteps'][2]['exerciseName'] == 'PIKE_PUSH_UP'
+        assert repeat4['workoutSteps'][2]['category'] == 'PUSH_UP'
 
 
 class TestWorkoutTypeDetection:
