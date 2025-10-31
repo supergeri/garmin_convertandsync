@@ -25,6 +25,16 @@ class TestParseBracket:
         parsed, num_iteration = parse_bracket("repeat(8)")
         assert parsed == "repeat"
         assert num_iteration == "8"
+    
+    def test_parse_bracket_with_hyphens(self):
+        parsed, num_iteration = parse_bracket("30-degree Lat Pull-down")
+        assert parsed == "30-degree lat pull-down"
+        assert num_iteration is None
+    
+    def test_parse_bracket_with_hyphens_and_spaces(self):
+        parsed, num_iteration = parse_bracket("Kettlebell Floor to Shelf")
+        assert parsed == "kettlebell floor to shelf"
+        assert num_iteration is None
 
 
 class TestParseTimeToMinutes:
@@ -102,4 +112,26 @@ class TestParseStepDetail:
     def test_parse_empty_string(self):
         result = parse_stepdetail("")
         assert result == {}
+    
+    def test_parse_with_description_pipe_syntax(self):
+        result = parse_stepdetail("lap | KB RDL Into Goblet Squat x10")
+        assert result['endCondition'] == ConditionType.LAP_BUTTON
+        assert result['endConditionValue'] == 1
+        assert result['description'] == "KB RDL Into Goblet Squat x10"
+    
+    def test_parse_with_description_and_other_details(self):
+        result = parse_stepdetail("10 reps | Some description")
+        assert result['endCondition'] == ConditionType.REPS
+        assert result['endConditionValue'] == 10
+        assert result['description'] == "Some description"
+    
+    def test_parse_description_without_condition(self):
+        result = parse_stepdetail(" | Description only")
+        assert result['description'] == "Description only"
+    
+    def test_parse_lap_with_description(self):
+        result = parse_stepdetail("lap | Straight Arm Pull down x 10")
+        assert result['endCondition'] == ConditionType.LAP_BUTTON
+        assert result['endConditionValue'] == 1
+        assert result['description'] == "Straight Arm Pull down x 10"
 

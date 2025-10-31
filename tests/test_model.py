@@ -41,6 +41,22 @@ class TestWorkoutStep:
         assert step.category == "SQUAT"
         assert step.childStepId == 1
     
+    def test_create_workout_step_with_description(self):
+        step = WorkoutStep(
+            stepId=4,
+            stepOrder=4,
+            stepType=StepType.INTERVAL,
+            endCondition=ConditionType.LAP_BUTTON,
+            endConditionValue=1,
+            exerciseName="GOBLET_SQUAT",
+            category="SQUAT",
+            description="KB RDL Into Goblet Squat x10"
+        )
+        
+        assert step.exerciseName == "GOBLET_SQUAT"
+        assert step.category == "SQUAT"
+        assert step.description == "KB RDL Into Goblet Squat x10"
+    
     def test_create_workout_step_with_target(self):
         step = WorkoutStep(
             stepId=3,

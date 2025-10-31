@@ -148,7 +148,46 @@ class TestWorkoutStepCreation:
         
         assert result.stepType == StepType.WARMUP
         assert result.category == 'CARDIO'
+        assert result.exerciseName == ''
         assert result.endCondition == ConditionType.LAP_BUTTON
+    
+    def test_exercise_with_description(self):
+        from garmin_planner.main import createWorkoutStep
+        from garmin_planner.constant import StepType, ConditionType
+        
+        step = {"Goblet Squat": "lap | KB RDL Into Goblet Squat x10"}
+        step_count = [0]
+        result = createWorkoutStep(step, step_count)
+        
+        assert result.stepType == StepType.INTERVAL
+        assert result.exerciseName == 'GOBLET_SQUAT'
+        assert result.category == 'SQUAT'
+        assert result.endCondition == ConditionType.LAP_BUTTON
+        assert result.description == "KB RDL Into Goblet Squat x10"
+    
+    def test_hyphenated_exercise_name(self):
+        from garmin_planner.main import createWorkoutStep
+        from garmin_planner.constant import StepType, ConditionType
+        
+        step = {"Kettlebell Floor to Shelf": "lap"}
+        step_count = [0]
+        result = createWorkoutStep(step, step_count)
+        
+        assert result.stepType == StepType.INTERVAL
+        assert result.exerciseName == 'KETTLEBELL_FLOOR_TO_SHELF'
+        assert result.category == 'DEADLIFT'
+    
+    def test_lat_pulldown_exercise_name_conversion(self):
+        from garmin_planner.main import createWorkoutStep
+        from garmin_planner.constant import StepType, ConditionType
+        
+        step = {"30-degree Lat Pull-down": "lap"}
+        step_count = [0]
+        result = createWorkoutStep(step, step_count)
+        
+        assert result.stepType == StepType.INTERVAL
+        assert result.exerciseName == '_30_DEGREE_LAT_PULLDOWN'
+        assert result.category == 'PULL_UP'
 
 
 class TestWorkoutTypeDetection:
@@ -189,4 +228,41 @@ class TestWorkoutTypeDetection:
         workout_dict = json.loads(json_result)
         
         assert workout_dict['sportType']['sportTypeKey'] == 'strength_training'
+    
+    def test_create_hyrox_style_workout(self):
+        """Test creating a HYROX-style workout with descriptions"""
+        steps = [
+            {"warmup": [
+                {"cardio": "lap"}
+            ]},
+            {"repeat": [
+                {"30-degree Lat Pull-down": "lap | Straight Arm Pull down x 10"},
+                {"Goblet Squat": "lap | KB RDL Into Goblet Squat x10"},
+                {"Kettlebell Floor to Shelf": "lap | KB Bottoms Up Press x8 each side"},
+                {"rest": "lap"}
+            ]}
+        ]
+        
+        json_result = createWorkoutJson("hyrox_test", steps)
+        workout_dict = json.loads(json_result)
+        
+        assert workout_dict['workoutName'] == 'hyrox_test'
+        assert workout_dict['sportType']['sportTypeKey'] == 'strength_training'
+        
+        # Check warmup has CARDIO category
+        warmup_step = workout_dict['workoutSegments'][0]['workoutSteps'][0]
+        assert warmup_step['stepType']['stepTypeKey'] == 'warmup'
+        assert warmup_step['category'] == 'CARDIO'
+        
+        # Check repeat has correct structure
+        repeat_step = workout_dict['workoutSegments'][0]['workoutSteps'][1]
+        assert repeat_step['stepType']['stepTypeKey'] == 'repeat'
+        assert repeat_step['numberOfIterations'] == 1  # Default when not specified
+        
+        # Check first exercise in repeat
+        first_exercise = repeat_step['workoutSteps'][0]
+        assert first_exercise['stepType']['stepTypeKey'] == 'interval'
+        assert first_exercise['exerciseName'] == '_30_DEGREE_LAT_PULLDOWN'
+        assert first_exercise['category'] == 'PULL_UP'
+        assert first_exercise['description'] == 'Straight Arm Pull down x 10'
 
