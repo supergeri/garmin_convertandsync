@@ -20,6 +20,7 @@ class WorkoutStep:
     childStepId: Optional[int] = None  # Needed for exercises within repeats
     category: Optional[str] = None  # Exercise category (e.g., "SQUAT", "CARDIO")
     exerciseName: Optional[str] = None  # Exercise name (e.g., "GOBLET_SQUAT")
+    description: Optional[str] = None  # Exercise description/notes
 
 @dataclass
 class RepeatStep:
