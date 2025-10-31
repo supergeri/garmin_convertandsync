@@ -66,6 +66,15 @@ def parse_stepdetail(string):
                         'endConditionValue': distanceInMeter
                     })
                 continue
+            
+            if ("k" in detail and "km" not in detail):
+                detail = detail.replace("k", "")
+                distanceInMeter = int(detail) * 1000  # Convert kilometers to meters
+                stepDetails.update({
+                        'endCondition': ConditionType.DISTANCE, 
+                        'endConditionValue': distanceInMeter
+                    })
+                continue
 
             ## Lap button
             if ("lap" in detail):

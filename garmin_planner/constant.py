@@ -28,7 +28,7 @@ class DistanceUnit(Enum):
     }
     MILE = {
       "unitKey": "mile"
-    },
+    }
 
     def to_dict(self):
         return self.value
