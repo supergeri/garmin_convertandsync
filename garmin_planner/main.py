@@ -96,7 +96,21 @@ def createWorkoutStep(step: dict, stepCount: list, inRepeat: bool = False):
                 # Replace hyphens and spaces with underscores, remove special chars
                 exerciseName = parsedStep.upper().replace(" ", "_").replace("-", "_")
                 # Try to determine category from exercise name
-                if "squat" in parsedStep.lower():
+                if "bulgarian split squat" in parsedStep.lower():
+                    category = "LUNGE"
+                elif "good morning" in parsedStep.lower():
+                    category = "LEG_CURL"
+                elif "clean and jerk" in parsedStep.lower():
+                    category = "OLYMPIC_LIFT"
+                elif "medicine ball slam" in parsedStep.lower():
+                    category = "PLYO"
+                elif "ski moguls" in parsedStep.lower():
+                    category = "CARDIO"
+                elif "pike push" in parsedStep.lower() or "push-up" in parsedStep.lower():
+                    category = "PUSH_UP"
+                elif "inverted row" in parsedStep.lower() or "row" in parsedStep.lower():
+                    category = "ROW"
+                elif "squat" in parsedStep.lower():
                     category = "SQUAT"
                 elif "press" in parsedStep.lower():
                     category = "BENCH_PRESS"
