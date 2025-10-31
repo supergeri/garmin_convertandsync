@@ -46,6 +46,19 @@ You can specify custom exercise names using quotes in the YAML:
 ### Lap Button
 - `lap` - Press lap button to advance
 
+## Exercise Descriptions
+
+You can add descriptions to exercises using the pipe syntax `|`:
+
+```yaml
+- "Exercise Name": "lap | Description text here"
+```
+
+For example:
+```yaml
+- "Goblet Squat": "lap | KB RDL Into Goblet Squat x10"
+```
+
 ## Example Strength Workouts
 
 ### Basic Strength Workout
@@ -75,6 +88,21 @@ workouts:
         - rest: lap
 ```
 
+### HYROX-Style Workout with Descriptions
+```yaml
+workouts:
+  hyrox_test:
+    - warmup:
+        - cardio: lap  # Cardio warmup nested under warmup
+    - repeat(3):
+        - "30-degree Lat Pull-down": "lap | Straight Arm Pull down x 10"
+        - "Goblet Squat": "lap | KB RDL Into Goblet Squat x10"
+        - "Kettlebell Floor to Shelf": "lap | KB Bottoms Up Press x8 each side"
+        - rest: lap
+```
+
+Note: Exercise names with hyphens and special characters are automatically converted to Garmin format (UPPER_CASE with underscores).
+
 ## Detection
 
 The app automatically detects if a workout is strength or running based on the step types present:
@@ -82,12 +110,25 @@ The app automatically detects if a workout is strength or running based on the s
 - If custom exercise names with `reps` are found, it's a strength workout
 - Otherwise, it defaults to running
 
+## Exercise Categories
+
+The app automatically determines exercise categories based on the exercise name:
+- "squat" → SQUAT
+- "press" → BENCH_PRESS
+- "deadlift" → DEADLIFT
+- "lat" or "pull" → PULL_UP
+- "kettlebell floor to shelf" → DEADLIFT
+
 ## Testing
 
-Use the `test_strength_workout.yaml` file to test strength workout creation. Run:
+Use the test YAML files to test workout creation:
+- `test_strength_workout.yaml` - Basic strength workout
+- `test_hyrox_workout.yaml` - HYROX-style workout with descriptions
 
+Run:
 ```bash
 python -m garmin_planner test_strength_workout.yaml
+python -m garmin_planner test_hyrox_workout.yaml
 ```
 
 Ensure your `secrets.yaml` contains valid Garmin Connect credentials.

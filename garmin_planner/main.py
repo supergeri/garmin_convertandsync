@@ -60,6 +60,7 @@ def createWorkoutStep(step: dict, stepCount: list, inRepeat: bool = False):
                             childParsed, _ = parse_bracket(childName)
                             if childParsed == "cardio":
                                 category = "CARDIO"
+                                exerciseName = ""  # Empty exercise name for cardio warmup
                                 break
             case "cooldown":
                 stepType = StepType.COOLDOWN
@@ -91,8 +92,9 @@ def createWorkoutStep(step: dict, stepCount: list, inRepeat: bool = False):
                 # For unmatched names, treat as exercise for strength workouts
                 # This allows custom exercise names like "Goblet Squat"
                 stepType = StepType.INTERVAL  # Strength exercises use INTERVAL type
-                # Convert exercise name to Garmin format (UPPER_CASE)
-                exerciseName = parsedStep.upper().replace(" ", "_")
+                # Convert exercise name to Garmin format (UPPER_CASE with underscores)
+                # Replace hyphens and spaces with underscores, remove special chars
+                exerciseName = parsedStep.upper().replace(" ", "_").replace("-", "_")
                 # Try to determine category from exercise name
                 if "squat" in parsedStep.lower():
                     category = "SQUAT"
@@ -100,6 +102,17 @@ def createWorkoutStep(step: dict, stepCount: list, inRepeat: bool = False):
                     category = "BENCH_PRESS"
                 elif "deadlift" in parsedStep.lower():
                     category = "DEADLIFT"
+                elif "pull" in parsedStep.lower() or "lat" in parsedStep.lower():
+                    category = "PULL_UP"
+                    # For lat pull-down exercises, use underscore prefix and convert PULL_DOWN to PULLDOWN
+                    if "lat" in parsedStep.lower() or "pull-down" in parsedStep.lower():
+                        exerciseName = "_" + exerciseName.replace("PULL_DOWN", "PULLDOWN")
+                elif "kettlebell" in parsedStep.lower():
+                    # Check for specific kettlebell exercises
+                    if "floor to shelf" in parsedStep.lower():
+                        category = "DEADLIFT"
+                    else:
+                        category = "SQUAT"  # Default for kettlebell exercises
                 # Add more categories as needed
                 logger.debug(f"Treating '{parsedStep}' as exercise with name '{exerciseName}', category '{category}'")
 
@@ -117,10 +130,10 @@ def createWorkoutStep(step: dict, stepCount: list, inRepeat: bool = False):
             parsedStepDetailDict = parse_stepdetail(stepDetail)
         
         # Add exercise metadata if this is an exercise
-        if exerciseName:
+        if exerciseName is not None:
             parsedStepDetailDict['exerciseName'] = exerciseName
         # Add category if set (for exercises like cardio which might not have exerciseName)
-        if category:
+        if category is not None:
             parsedStepDetailDict['category'] = category
         # Add childStepId if we're inside a repeat
         if inRepeat:

@@ -18,7 +18,7 @@ def parseYaml(filename: str):
     
 
 def parse_bracket(string):
-    match = re.match(r'([\w@ ]+)(?:\(([^()]+)\))?', string.lower())
+    match = re.match(r'([\w@ \-]+)(?:\(([^()]+)\))?', string.lower())
     if match:
         key = match.group(1).strip()  # Remove extra whitespace
         value = match.group(2)      
@@ -32,7 +32,17 @@ def parse_time_to_minutes(time_string):
 
 def parse_stepdetail(string):
     stepDetails = {}
-    details = string.split(" ")
+    
+    # Check for pipe-separated description (e.g., "lap | Description text")
+    if "|" in string:
+        parts = string.split("|", 1)
+        detail_string = parts[0].strip()
+        description = parts[1].strip()
+        stepDetails['description'] = description
+    else:
+        detail_string = string
+    
+    details = detail_string.split(" ")
     prev_detail = None
     for detail in details:
         try:
