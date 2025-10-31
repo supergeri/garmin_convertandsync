@@ -79,11 +79,13 @@ def createWorkoutStep(step: dict, stepCount: list, inRepeat: bool = False):
                 stepCount[0] += 1
                 order = stepCount[0]
                 workoutSteps = createWorkoutList(stepDetail, stepCount, inRepeat=True)
+                # numIteration might be None if parse_bracket didn't find it
+                iterations = int(numIteration) if numIteration else 1
                 return RepeatStep(
                     stepId=order,
                     stepOrder=order,
                     workoutSteps=workoutSteps,
-                    numberOfIterations=int(numIteration)
+                    numberOfIterations=iterations
                 )
             case _:
                 # For unmatched names, treat as exercise for strength workouts
