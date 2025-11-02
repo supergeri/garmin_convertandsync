@@ -133,13 +133,14 @@ def createWorkoutStep(step: dict, stepCount: list, inRepeat: bool = False):
         # Handle stepDetail - could be a string or a list
         if isinstance(stepDetail, list):
             # Nested structure (like warmup with children)
-            parsedStepDetailDict = {}
             # We'll use default values for the end condition
-            if stepType == StepType.WARMUP:
+            if stepType == StepType.WARMUP or stepType == StepType.COOLDOWN:
                 parsedStepDetailDict = {
                     'endCondition': ConditionType.LAP_BUTTON,
                     'endConditionValue': 10  # Default value
                 }
+            else:
+                parsedStepDetailDict = {}
         else:
             parsedStepDetailDict = parse_stepdetail(stepDetail)
         
