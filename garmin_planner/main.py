@@ -127,6 +127,23 @@ def createWorkoutStep(step: dict, stepCount: list, inRepeat: bool = False):
                         category = "DEADLIFT"
                     else:
                         category = "SQUAT"  # Default for kettlebell exercises
+                elif "push up" in parsedStep.lower() or "pushup" in parsedStep.lower():
+                    category = "PUSH_UP"
+                elif "plank" in parsedStep.lower():
+                    # PLANK category - setting to None as it may not be supported by Garmin
+                    category = None
+                elif "sled" in parsedStep.lower() or "drag" in parsedStep.lower():
+                    # SLED category - setting to None as it may not be supported by Garmin
+                    category = None
+                elif "burpee" in parsedStep.lower():
+                    # BURPEE category - setting to None as it may not be supported by Garmin
+                    category = None
+                elif "carry" in parsedStep.lower():
+                    # CARRY category - setting to None as it may not be supported by Garmin
+                    category = None
+                elif "push" in parsedStep.lower():
+                    # PUSH category - setting to None as it may not be supported by Garmin
+                    category = None
                 # Add more categories as needed
                 logger.debug(f"Treating '{parsedStep}' as exercise with name '{exerciseName}', category '{category}'")
 

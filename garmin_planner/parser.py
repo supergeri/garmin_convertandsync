@@ -49,37 +49,51 @@ def parse_stepdetail(string):
             # Duration
             ## Time
             if ("sec" in detail):
-                detail = detail.replace("sec", "")
-                durationInSec = int(detail)
+                durationInSec = int(detail.replace("sec", ""))
                 stepDetails.update({
                         'endCondition': ConditionType.TIME, 
                         'endConditionValue': durationInSec
                     })
                 continue
 
-            if ("min" in detail):
-                detail = detail.replace("min", "")
-                durationNum = int(detail)
-                durationInSec = durationNum * 60
-                stepDetails.update({
-                        'endCondition': ConditionType.TIME, 
-                        'endConditionValue': durationInSec
-                    })
-                continue
+            if (detail.endswith("s") and not detail.endswith("ms") and not "min" in detail):
+                # Handle "60s" format (seconds)
+                try:
+                    durationInSec = int(detail.replace("s", ""))
+                    stepDetails.update({
+                            'endCondition': ConditionType.TIME, 
+                            'endConditionValue': durationInSec
+                        })
+                    continue
+                except ValueError:
+                    pass
+
+            if ("min" in detail and (detail.endswith("min") or detail.startswith("min"))):
+                try:
+                    durationNum = int(detail.replace("min", ""))
+                    durationInSec = durationNum * 60
+                    stepDetails.update({
+                            'endCondition': ConditionType.TIME, 
+                            'endConditionValue': durationInSec
+                        })
+                    continue
+                except ValueError:
+                    pass
             
             ## Distance
-            if ("m" in detail):
-                detail = detail.replace("m", "")
-                distanceInMeter = int(detail)
-                stepDetails.update({
-                        'endCondition': ConditionType.DISTANCE, 
-                        'endConditionValue': distanceInMeter
-                    })
-                continue
+            if (detail.endswith("m") and len(detail) > 1):
+                try:
+                    distanceInMeter = int(detail.replace("m", ""))
+                    stepDetails.update({
+                            'endCondition': ConditionType.DISTANCE, 
+                            'endConditionValue': distanceInMeter
+                        })
+                    continue
+                except ValueError:
+                    pass
             
             if ("k" in detail and "km" not in detail):
-                detail = detail.replace("k", "")
-                distanceInMeter = int(detail) * 1000  # Convert kilometers to meters
+                distanceInMeter = int(detail.replace("k", "")) * 1000  # Convert kilometers to meters
                 stepDetails.update({
                         'endCondition': ConditionType.DISTANCE, 
                         'endConditionValue': distanceInMeter
