@@ -6,11 +6,11 @@ workouts:
     - warmup:
         - cardio: lap  # Cardio warmup with lap button  
     - repeat(3):
-        - "Goblet Squat": 10 reps  # Exercise: Goblet Squat with 10 reps
+        - "Goblet Squat [category: SQUAT]": 10 reps  # Exercise: Goblet Squat with 10 reps
         - rest: lap  # Rest with lap button press
 
 schedulePlan:
-  start_from: 2025-10-28
+  start_from: 2025-11-02
   workouts: 
     - strength_workout_2
 

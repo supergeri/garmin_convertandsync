@@ -46,7 +46,7 @@ def createWorkoutStep(step: dict, stepCount: list, inRepeat: bool = False):
     category = None
     for stepName in step:
         stepDetail = step[stepName]
-        parsedStep, numIteration = parse_bracket(stepName)
+        parsedStep, numIteration, explicitCategory = parse_bracket(stepName)
         match parsedStep:
             case "run":
                 stepType = StepType.WARMUP
@@ -57,7 +57,7 @@ def createWorkoutStep(step: dict, stepCount: list, inRepeat: bool = False):
                     # Check if there's a cardio child
                     for child in stepDetail:
                         for childName in child:
-                            childParsed, _ = parse_bracket(childName)
+                            childParsed, _, _ = parse_bracket(childName)
                             if childParsed == "cardio":
                                 category = "CARDIO"
                                 exerciseName = ""  # Empty exercise name for cardio warmup
@@ -92,11 +92,23 @@ def createWorkoutStep(step: dict, stepCount: list, inRepeat: bool = False):
                 # For unmatched names, treat as exercise for strength workouts
                 # This allows custom exercise names like "Goblet Squat"
                 stepType = StepType.INTERVAL  # Strength exercises use INTERVAL type
-                # Convert exercise name to Garmin format (UPPER_CASE with underscores)
-                # Replace hyphens and spaces with underscores, remove special chars
-                exerciseName = parsedStep.upper().replace(" ", "_").replace("-", "_")
-                # Try to determine category from exercise name
-                if "bulgarian split squat" in parsedStep.lower():
+                # Use explicit category if provided in YAML, otherwise try to determine from exercise name
+                if explicitCategory:
+                    category = explicitCategory.upper()
+                    # For explicit categories, still need to set exerciseName based on exercise name
+                    # Special cases for sled and carry categories
+                    if category == "SLED":
+                        if "sled push" in parsedStep.lower():
+                            exerciseName = "PUSH"
+                        elif "sled" in parsedStep.lower() and "drag" in parsedStep.lower():
+                            exerciseName = "BACKWARD_DRAG"
+                    elif category == "CARRY":
+                        if "farmer" in parsedStep.lower() and "carry" in parsedStep.lower():
+                            exerciseName = "FARMERS_CARRY"
+                    elif category == "SHOULDER_PRESS":
+                        if "push press" in parsedStep.lower():
+                            exerciseName = parsedStep.upper().replace(" ", "_").replace("-", "_")
+                elif "bulgarian split squat" in parsedStep.lower():
                     category = "LUNGE"
                 elif "good morning" in parsedStep.lower():
                     category = "LEG_CURL"
@@ -108,10 +120,16 @@ def createWorkoutStep(step: dict, stepCount: list, inRepeat: bool = False):
                     category = "CARDIO"
                 elif "pike push" in parsedStep.lower() or "push-up" in parsedStep.lower():
                     category = "PUSH_UP"
+                elif "plank" in parsedStep.lower():
+                    category = "PLANK"
+                elif "burpee" in parsedStep.lower():
+                    category = "TOTAL_BODY"
                 elif "inverted row" in parsedStep.lower() or "row" in parsedStep.lower():
                     category = "ROW"
                 elif "squat" in parsedStep.lower():
                     category = "SQUAT"
+                elif "push press" in parsedStep.lower():
+                    category = "SHOULDER_PRESS"
                 elif "press" in parsedStep.lower():
                     category = "BENCH_PRESS"
                 elif "deadlift" in parsedStep.lower():
@@ -119,14 +137,49 @@ def createWorkoutStep(step: dict, stepCount: list, inRepeat: bool = False):
                 elif "pull" in parsedStep.lower() or "lat" in parsedStep.lower():
                     category = "PULL_UP"
                     # For lat pull-down exercises, use underscore prefix and convert PULL_DOWN to PULLDOWN
+                    # Convert exercise name to Garmin format (UPPER_CASE with underscores)
+                    exerciseName = parsedStep.upper().replace(" ", "_").replace("-", "_")
                     if "lat" in parsedStep.lower() or "pull-down" in parsedStep.lower():
                         exerciseName = "_" + exerciseName.replace("PULL_DOWN", "PULLDOWN")
                 elif "kettlebell" in parsedStep.lower():
                     # Check for specific kettlebell exercises
                     if "floor to shelf" in parsedStep.lower():
                         category = "DEADLIFT"
+                    elif "swing" in parsedStep.lower():
+                        category = "HIP_SWING"
                     else:
                         category = "SQUAT"  # Default for kettlebell exercises
+                elif "push up" in parsedStep.lower() or "pushup" in parsedStep.lower():
+                    category = "PUSH_UP"
+                elif "sled push" in parsedStep.lower():
+                    category = "SLED"
+                    exerciseName = "PUSH"
+                elif "sled" in parsedStep.lower() and "drag" in parsedStep.lower():
+                    category = "SLED"
+                    exerciseName = "BACKWARD_DRAG"
+                elif "sled" in parsedStep.lower() or "drag" in parsedStep.lower():
+                    category = None  # Not supported by Garmin
+                elif "farmer" in parsedStep.lower() and "carry" in parsedStep.lower():
+                    category = "CARRY"
+                    exerciseName = "FARMERS_CARRY"
+                elif "carry" in parsedStep.lower():
+                    category = None  # Not supported by Garmin
+                elif "push" in parsedStep.lower():
+                    category = None  # Not supported by Garmin
+                
+                # Only set exerciseName if we have a category (category is our way of mapping)
+                # Don't set exerciseName for unmapped exercises to avoid sending invalid data
+                # Some categories like SLED and CARRY don't need exerciseName
+                # Only set it if not explicitly provided by category matching above
+                if category is not None and exerciseName is None:
+                    # Special case: sled push needs exerciseName="PUSH"
+                    if category == "SLED" and "sled push" in parsedStep.lower():
+                        exerciseName = "PUSH"
+                    # Categories that don't use exerciseName should leave it as None
+                    elif category not in ["SLED", "CARRY"]:
+                        # Convert exercise name to Garmin format (UPPER_CASE with underscores)
+                        exerciseName = parsedStep.upper().replace(" ", "_").replace("-", "_")
+                
                 # Add more categories as needed
                 logger.debug(f"Treating '{parsedStep}' as exercise with name '{exerciseName}', category '{category}'")
 
@@ -135,7 +188,7 @@ def createWorkoutStep(step: dict, stepCount: list, inRepeat: bool = False):
             # Nested structure (like warmup with children)
             parsedStepDetailDict = {}
             # We'll use default values for the end condition
-            if stepType == StepType.WARMUP:
+            if stepType == StepType.WARMUP or stepType == StepType.COOLDOWN:
                 parsedStepDetailDict = {
                     'endCondition': ConditionType.LAP_BUTTON,
                     'endConditionValue': 10  # Default value
@@ -164,7 +217,7 @@ def createWorkoutJson(workoutName: str, steps: list):
     def has_strength_steps(steps):
         for step in steps:
             for stepName in step:
-                parsedStep, _ = parse_bracket(stepName)
+                parsedStep, _, _ = parse_bracket(stepName)
                 if parsedStep in ["exercise", "rest", "cardio"]:
                     return True
                 # Check if we have any common strength indicators

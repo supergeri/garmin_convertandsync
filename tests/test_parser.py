@@ -7,34 +7,58 @@ class TestParseBracket:
     """Test parsing of bracket notation"""
     
     def test_parse_bracket_with_repeat(self):
-        parsed, num_iteration = parse_bracket("repeat(3)")
+        parsed, num_iteration, category = parse_bracket("repeat(3)")
         assert parsed == "repeat"
         assert num_iteration == "3"
+        assert category is None
     
     def test_parse_bracket_without_brackets(self):
-        parsed, num_iteration = parse_bracket("warmup")
+        parsed, num_iteration, category = parse_bracket("warmup")
         assert parsed == "warmup"
         assert num_iteration is None
+        assert category is None
     
     def test_parse_bracket_with_spaces(self):
-        parsed, num_iteration = parse_bracket("Goblet Squat")
+        parsed, num_iteration, category = parse_bracket("Goblet Squat")
         assert parsed == "goblet squat"
         assert num_iteration is None
+        assert category is None
     
     def test_parse_bracket_with_repeat_spaces(self):
-        parsed, num_iteration = parse_bracket("repeat(8)")
+        parsed, num_iteration, category = parse_bracket("repeat(8)")
         assert parsed == "repeat"
         assert num_iteration == "8"
+        assert category is None
     
     def test_parse_bracket_with_hyphens(self):
-        parsed, num_iteration = parse_bracket("30-degree Lat Pull-down")
+        parsed, num_iteration, category = parse_bracket("30-degree Lat Pull-down")
         assert parsed == "30-degree lat pull-down"
         assert num_iteration is None
+        assert category is None
     
     def test_parse_bracket_with_hyphens_and_spaces(self):
-        parsed, num_iteration = parse_bracket("Kettlebell Floor to Shelf")
+        parsed, num_iteration, category = parse_bracket("Kettlebell Floor to Shelf")
         assert parsed == "kettlebell floor to shelf"
         assert num_iteration is None
+        assert category is None
+    
+    def test_parse_bracket_with_category(self):
+        parsed, num_iteration, category = parse_bracket("Burpee [category: TOTAL_BODY]")
+        assert parsed == "burpee"
+        assert num_iteration is None
+        assert category == "total_body"
+    
+    def test_parse_bracket_with_category_and_repeat(self):
+        parsed, num_iteration, category = parse_bracket("repeat(3) [category: PLYO]")
+        assert parsed == "repeat"
+        assert num_iteration == "3"
+        assert category == "plyo"  # Parser extracts it, but caller will ignore
+    
+    def test_parse_bracket_with_category_in_exercise_name(self):
+        parsed, num_iteration, category = parse_bracket("Custom Exercise [category: CARDIO]")
+        assert parsed == "custom exercise"
+        assert num_iteration is None
+        assert category == "cardio"
 
 
 class TestParseTimeToMinutes:
