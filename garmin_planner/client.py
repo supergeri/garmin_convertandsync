@@ -16,6 +16,10 @@ class Client(object):
         return garth.connectapi(f"""/workout-service/workouts""",
                                 params={"start": 1, "limit": 999, "myWorkoutsOnly": True, "sharedWorkoutsOnly": False, "orderBy": "WORKOUT_NAME", "orderSeq": "ASC", "includeAtp": False})
 
+    def getWorkout(self, workoutId: str) -> dict:
+        return garth.connectapi(f"""/workout-service/workout/{workoutId}""",
+                                method="GET")
+
     def deleteWorkout(self, workout: dict) -> bool:
         res = garth.connectapi(f"""/workout-service/workout/{workout['workoutId']}""",
                                method="DELETE")
