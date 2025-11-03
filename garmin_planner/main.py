@@ -108,6 +108,14 @@ def createWorkoutStep(step: dict, stepCount: list, inRepeat: bool = False):
                     elif category == "SHOULDER_PRESS":
                         if "push press" in parsedStep.lower():
                             exerciseName = parsedStep.upper().replace(" ", "_").replace("-", "_")
+                    # For CORE category, we need special handling based on the exercise name
+                    elif category == "CORE":
+                        if "x abs" in parsedStep.lower() or "x-abs" in parsedStep.lower():
+                            category = "SIT_UP"  # X Abs uses SIT_UP category with X_ABS as exerciseName
+                            exerciseName = parsedStep.upper().replace(" ", "_").replace("-", "_")
+                        else:
+                            # For other CORE exercises, use default behavior
+                            pass
                 elif "bulgarian split squat" in parsedStep.lower():
                     category = "LUNGE"
                 elif "good morning" in parsedStep.lower():
@@ -162,6 +170,13 @@ def createWorkoutStep(step: dict, stepCount: list, inRepeat: bool = False):
                 elif "farmer" in parsedStep.lower() and "carry" in parsedStep.lower():
                     category = "CARRY"
                     exerciseName = "FARMERS_CARRY"
+                elif "bar hold" in parsedStep.lower() or ("hold" in parsedStep.lower() and "bar" in parsedStep.lower()):
+                    category = "DEADLIFT"  # Bar holds are typically grip/strength work related to deadlifts
+                elif "x abs" in parsedStep.lower() or "x-abs" in parsedStep.lower():
+                    category = "SIT_UP"  # X Abs uses SIT_UP category with X_ABS as exerciseName
+                    exerciseName = parsedStep.upper().replace(" ", "_").replace("-", "_")
+                elif "ghd back extension" in parsedStep.lower() or "back extension" in parsedStep.lower():
+                    category = "CORE"  # GHD back extensions are core exercises
                 elif "carry" in parsedStep.lower():
                     category = None  # Not supported by Garmin
                 elif "push" in parsedStep.lower():

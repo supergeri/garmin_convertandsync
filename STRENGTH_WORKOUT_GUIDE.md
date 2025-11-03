@@ -166,6 +166,9 @@ The app automatically determines exercise categories based on the exercise name 
 - "sled push" → SLED
 - "sled drag" → SLED
 - "farmer's carry" → CARRY
+- "bar hold" → DEADLIFT (grip strength work)
+- "x abs" or "x-abs" → SIT_UP (with exerciseName: X_ABS)
+- "ghd back extension" or "back extension" → CORE (core exercises)
 
 ### Explicit Categories
 
