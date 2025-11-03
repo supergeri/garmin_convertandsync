@@ -201,6 +201,9 @@ Supported categories include:
 - `CARRY` - Carry exercises with specific exercise names:
   - `exerciseName: FARMERS_CARRY` for farmer's carry
 - `SHOULDER_PRESS` - Shoulder press variations (e.g., Dumbbell Push Press)
+- `CORE` - Core exercises (e.g., GHD Back Extensions)
+- `SIT_UP` - Sit-up variations with specific exercise names:
+  - `exerciseName: X_ABS` for X Abs exercises
 - And more...
 
 ## Testing
