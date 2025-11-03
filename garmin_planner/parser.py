@@ -18,12 +18,18 @@ def parseYaml(filename: str):
     
 
 def parse_bracket(string):
-    match = re.match(r'([\w@ \-]+)(?:\(([^()]+)\))?', string.lower())
+    # Support optional category syntax: "Exercise Name [category: CATEGORY_NAME]"
+    category_match = re.search(r'\[category:\s*([^\]]+)\]', string.lower())
+    category = category_match.group(1).strip() if category_match else None
+    # Remove the category part from the string before parsing
+    string_clean = re.sub(r'\[category:\s*[^\]]+\]', '', string)
+    
+    match = re.match(r"([\w@ \-']+)(?:\(([^()]+)\))?", string_clean.lower())
     if match:
         key = match.group(1).strip()  # Remove extra whitespace
         value = match.group(2)      
-        return key, value
-    return None, None
+        return key, value, category
+    return None, None, None
 
 def parse_time_to_minutes(time_string):
     minutes, sec = map(int, time_string.split(":"))
@@ -49,37 +55,51 @@ def parse_stepdetail(string):
             # Duration
             ## Time
             if ("sec" in detail):
-                detail = detail.replace("sec", "")
-                durationInSec = int(detail)
+                durationInSec = int(detail.replace("sec", ""))
                 stepDetails.update({
                         'endCondition': ConditionType.TIME, 
                         'endConditionValue': durationInSec
                     })
                 continue
 
-            if ("min" in detail):
-                detail = detail.replace("min", "")
-                durationNum = int(detail)
-                durationInSec = durationNum * 60
-                stepDetails.update({
-                        'endCondition': ConditionType.TIME, 
-                        'endConditionValue': durationInSec
-                    })
-                continue
+            if (detail.endswith("s") and not detail.endswith("ms") and not "min" in detail):
+                # Handle "60s" format (seconds)
+                try:
+                    durationInSec = int(detail.replace("s", ""))
+                    stepDetails.update({
+                            'endCondition': ConditionType.TIME, 
+                            'endConditionValue': durationInSec
+                        })
+                    continue
+                except ValueError:
+                    pass
+
+            if ("min" in detail and (detail.endswith("min") or detail.startswith("min"))):
+                try:
+                    durationNum = int(detail.replace("min", ""))
+                    durationInSec = durationNum * 60
+                    stepDetails.update({
+                            'endCondition': ConditionType.TIME, 
+                            'endConditionValue': durationInSec
+                        })
+                    continue
+                except ValueError:
+                    pass
             
             ## Distance
-            if ("m" in detail):
-                detail = detail.replace("m", "")
-                distanceInMeter = int(detail)
-                stepDetails.update({
-                        'endCondition': ConditionType.DISTANCE, 
-                        'endConditionValue': distanceInMeter
-                    })
-                continue
+            if (detail.endswith("m") and len(detail) > 1):
+                try:
+                    distanceInMeter = int(detail.replace("m", ""))
+                    stepDetails.update({
+                            'endCondition': ConditionType.DISTANCE, 
+                            'endConditionValue': distanceInMeter
+                        })
+                    continue
+                except ValueError:
+                    pass
             
             if ("k" in detail and "km" not in detail):
-                detail = detail.replace("k", "")
-                distanceInMeter = int(detail) * 1000  # Convert kilometers to meters
+                distanceInMeter = int(detail.replace("k", "")) * 1000  # Convert kilometers to meters
                 stepDetails.update({
                         'endCondition': ConditionType.DISTANCE, 
                         'endConditionValue': distanceInMeter
@@ -110,7 +130,7 @@ def parse_stepdetail(string):
 
             # Target
             if ("@" in detail):
-                target, value = parse_bracket(detail)
+                target, value, _ = parse_bracket(detail)
                 if (target == None or value == None):
                     continue
 

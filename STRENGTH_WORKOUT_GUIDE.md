@@ -103,6 +103,37 @@ workouts:
 
 Note: Exercise names with hyphens and special characters are automatically converted to Garmin format (UPPER_CASE with underscores).
 
+### Workout with Explicit Categories
+```yaml
+workouts:
+  custom_categories:
+    - warmup:
+        - cardio: lap
+    - repeat(3):
+        - "Burpee [category: TOTAL_BODY]": 10 reps  # Explicit category
+        - "Custom Plyo Move [category: PLYO]": 8 reps  # Custom exercise with explicit category
+        - rest: lap
+```
+
+This is useful when:
+- You have a custom exercise name that doesn't match any automatic detection
+- You want to ensure a specific category is used
+- You're testing new exercise categories
+
+### Workout with Equipment-Based Exercises
+```yaml
+workouts:
+  equipment_workout:
+    - warmup:
+        - cardio: lap
+    - repeat(3):
+        - "Sled Push": lap  # Automatically maps to SLED category
+        - "Ski Moguls": 60s  # Automatically maps to CARDIO category
+        - rest: 90s
+```
+
+Equipment-based exercises like sled pushes and ski moguls are automatically categorized correctly when you use the standard exercise name.
+
 ## Detection
 
 The app automatically detects if a workout is strength or running based on the step types present:
@@ -112,12 +143,62 @@ The app automatically detects if a workout is strength or running based on the s
 
 ## Exercise Categories
 
-The app automatically determines exercise categories based on the exercise name:
+### Automatic Detection
+
+The app automatically determines exercise categories based on the exercise name (checked in order of specificity):
+- "bulgarian split squat" → LUNGE
+- "good morning" → LEG_CURL
+- "clean and jerk" → OLYMPIC_LIFT
+- "medicine ball slam" → PLYO
+- "ski moguls" → CARDIO
+- "pike push" or "push-up" → PUSH_UP
+- "plank" → PLANK
+- "burpee" → TOTAL_BODY
+- "inverted row" or "row" → ROW
 - "squat" → SQUAT
+- "push press" → SHOULDER_PRESS
 - "press" → BENCH_PRESS
 - "deadlift" → DEADLIFT
 - "lat" or "pull" → PULL_UP
 - "kettlebell floor to shelf" → DEADLIFT
+- "kettlebell swing" → HIP_SWING
+- "push up" or "pushup" → PUSH_UP
+- "sled push" → SLED
+- "sled drag" → SLED
+- "farmer's carry" → CARRY
+
+### Explicit Categories
+
+You can override automatic detection by explicitly specifying a category in your YAML:
+
+```yaml
+- "Custom Exercise [category: PLYO]": 10 reps
+- "Burpee [category: TOTAL_BODY]": 10 reps
+- "My Special Exercise [category: CARDIO]": lap
+```
+
+Supported categories include:
+- `PLYO` - Plyometric exercises
+- `TOTAL_BODY` - Full body exercises (e.g., Burpee)
+- `CARDIO` - Cardio exercises (e.g., Ski Moguls)
+- `SQUAT` - Squat variations
+- `BENCH_PRESS` - Bench press variations
+- `DEADLIFT` - Deadlift variations
+- `PULL_UP` - Pull-up and lat exercises
+- `PUSH_UP` - Push-up variations
+- `LUNGE` - Lunge variations
+- `LEG_CURL` - Leg curl variations
+- `OLYMPIC_LIFT` - Olympic lifting movements
+- `PLANK` - Plank exercises
+- `ROW` - Rowing exercises
+- `SLED` - Sled exercises with specific exercise names:
+  - `exerciseName: PUSH` for sled push
+  - `exerciseName: BACKWARD_DRAG` for sled backward drag
+- `HIP_SWING` - Hip swing exercises (e.g., Kettlebell Swing)
+- `CARRY` - Carry exercises with specific exercise names:
+  - `exerciseName: FARMERS_CARRY` for farmer's carry
+- `SHOULDER_PRESS` - Shoulder press variations (e.g., Dumbbell Push Press)
+- And more...
 
 ## Testing
 
