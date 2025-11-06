@@ -24,6 +24,19 @@ def parse_bracket(string):
     # Remove the category part from the string before parsing
     string_clean = re.sub(r'\[category:\s*[^\]]+\]', '', string)
     
+    # Support repeatUntilTime syntax: "repeatUntilTime(2100)" or "repeatUntilTime(35min)"
+    if "repeatuntiltime" in string_clean.lower():
+        match = re.search(r'repeatuntiltime\s*\(([^()]+)\)', string_clean.lower())
+        if match:
+            time_value = match.group(1).strip()
+            # Convert to seconds if it's in minutes
+            if "min" in time_value.lower():
+                minutes = int(re.search(r'(\d+)', time_value).group(1))
+                seconds = minutes * 60
+            else:
+                seconds = int(time_value)
+            return "repeatuntiltime", seconds, category
+    
     match = re.match(r"([\w@ \-']+)(?:\(([^()]+)\))?", string_clean.lower())
     if match:
         key = match.group(1).strip()  # Remove extra whitespace
@@ -110,7 +123,7 @@ def parse_stepdetail(string):
             if ("lap" in detail):
                 stepDetails.update({
                         'endCondition': ConditionType.LAP_BUTTON, 
-                        'endConditionValue': 1
+                        'endConditionValue': 30.0  # Garmin uses 30.0 for lap button
                     })
                 continue
             

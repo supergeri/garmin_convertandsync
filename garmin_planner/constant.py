@@ -17,6 +17,11 @@ class SportType(Enum):
       "sportTypeKey": "strength_training",
       "displayOrder": 5
     }
+    HIIT = {
+      "sportTypeId": 9,
+      "sportTypeKey": "hiit",
+      "displayOrder": 7
+    }
 
     def to_dict(self):
         return self.value

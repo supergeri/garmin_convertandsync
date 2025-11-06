@@ -4,6 +4,7 @@ from garmin_planner.model.workoutModel import WorkoutModel, WorkoutSegment, Work
 from garmin_planner.constant import *
 from garmin_planner.parser import *
 from enum import Enum as PyEnum
+from typing import Optional
 import re
 import json
 import datetime
@@ -24,23 +25,39 @@ def replace_variables(data, definitionsDict: dict):
 
 # Serialize to JSON
 def serialize(obj):
+    # Handle basic Python types first
+    if isinstance(obj, (str, int, float, bool)) or obj is None:
+        return obj
+    # Handle lists
+    if isinstance(obj, list):
+        return [serialize(item) for item in obj]
     # Support Python Enums and the library's enum-like classes
     if isinstance(obj, PyEnum):
         return obj.value if hasattr(obj, "value") else obj.name
     if hasattr(obj, "to_dict") and callable(getattr(obj, "to_dict")):
         return obj.to_dict()
+    # Handle dataclasses - convert to dict
+    if hasattr(obj, "__dataclass_fields__"):
+        result = {}
+        for field in obj.__dataclass_fields__:
+            value = getattr(obj, field, None)
+            # Include all fields, including None values (they'll be serialized as null in JSON)
+            result[field] = serialize(value)
+        return result
     # Fallback for simple dataclasses/objects used by the library
-    return getattr(obj, "__dict__", str(obj))
+    if hasattr(obj, "__dict__"):
+        return {k: serialize(v) for k, v in obj.__dict__.items()}
+    return str(obj)
 
-def createWorkoutList(steps: list, stepCount: list, inRepeat: bool = False):
+def createWorkoutList(steps: list, stepCount: list, inRepeat: bool = False, sport_type: Optional[SportType] = None):
     workoutSteps = []
     for _, step in enumerate(steps):
-        workoutStep = createWorkoutStep(step, stepCount, inRepeat=inRepeat)
+        workoutStep = createWorkoutStep(step, stepCount, inRepeat=inRepeat, sport_type=sport_type)
         if workoutStep:
             workoutSteps.append(workoutStep)
     return workoutSteps
 
-def createWorkoutStep(step: dict, stepCount: list, inRepeat: bool = False):
+def createWorkoutStep(step: dict, stepCount: list, inRepeat: bool = False, sport_type: Optional[SportType] = None):
     stepType = None
     exerciseName = None
     category = None
@@ -49,21 +66,40 @@ def createWorkoutStep(step: dict, stepCount: list, inRepeat: bool = False):
         parsedStep, numIteration, explicitCategory = parse_bracket(stepName)
         match parsedStep:
             case "run":
-                stepType = StepType.WARMUP
+                # For HIIT workouts, use RUN_INDOOR category for run steps
+                if sport_type == SportType.HIIT:
+                    stepType = StepType.INTERVAL
+                    category = "RUN_INDOOR"
+                    exerciseName = ""
+                else:
+                    # For running workouts, run steps are warmup/interval steps without category
+                    stepType = StepType.WARMUP
+                    category = None
             case "warmup":
                 stepType = StepType.WARMUP
+                # For HIIT workouts, warmup/cooldown use CARDIO category
+                if sport_type == SportType.HIIT:
+                    category = "CARDIO"
+                    exerciseName = ""
                 # Check if warmup has nested cardio or other exercises
                 if isinstance(stepDetail, list):
                     # Check if there's a cardio child
                     for child in stepDetail:
                         for childName in child:
                             childParsed, _, _ = parse_bracket(childName)
-                            if childParsed == "cardio":
-                                category = "CARDIO"
-                                exerciseName = ""  # Empty exercise name for cardio warmup
+                            if childParsed == "cardio" or childParsed == "run":
+                                # For HIIT workouts, warmup/cooldown use CARDIO category
+                                # The actual run steps inside repeats use RUN_INDOOR
+                                if category is None:
+                                    category = "CARDIO"
+                                    exerciseName = ""  # Empty exercise name for cardio warmup
                                 break
             case "cooldown":
                 stepType = StepType.COOLDOWN
+                # For HIIT workouts, warmup/cooldown use CARDIO category
+                if sport_type == SportType.HIIT:
+                    category = "CARDIO"
+                    exerciseName = ""
             case "recovery":
                 stepType = StepType.RECOVERY
             case "exercise":
@@ -73,13 +109,18 @@ def createWorkoutStep(step: dict, stepCount: list, inRepeat: bool = False):
             case "cardio":
                 # Cardio should be treated as an exercise with category
                 stepType = StepType.INTERVAL  # Use INTERVAL type for cardio exercises
-                category = "CARDIO"
+                # For HIIT workouts, use RUN_INDOOR for running steps
+                if sport_type == SportType.HIIT:
+                    category = "RUN_INDOOR"
+                    exerciseName = ""
+                else:
+                    category = "CARDIO"
                 # We don't set exerciseName for cardio as it's just a category
             case "repeat":
                 stepType = StepType.REPEAT
                 stepCount[0] += 1
                 order = stepCount[0]
-                workoutSteps = createWorkoutList(stepDetail, stepCount, inRepeat=True)
+                workoutSteps = createWorkoutList(stepDetail, stepCount, inRepeat=True, sport_type=sport_type)
                 # numIteration might be None if parse_bracket didn't find it
                 iterations = int(numIteration) if numIteration else 1
                 return RepeatStep(
@@ -87,6 +128,21 @@ def createWorkoutStep(step: dict, stepCount: list, inRepeat: bool = False):
                     stepOrder=order,
                     workoutSteps=workoutSteps,
                     numberOfIterations=iterations
+                )
+            case "repeatuntiltime":
+                stepType = StepType.REPEAT
+                stepCount[0] += 1
+                order = stepCount[0]
+                # numIteration contains the time in seconds
+                time_seconds = float(numIteration) if numIteration else 600.0
+                workoutSteps = createWorkoutList(stepDetail, stepCount, inRepeat=True, sport_type=sport_type)
+                return RepeatStep(
+                    stepId=order,
+                    stepOrder=order,
+                    workoutSteps=workoutSteps,
+                    numberOfIterations=None,  # None for time-based repeats
+                    endCondition=ConditionType.TIME,
+                    endConditionValue=time_seconds  # Float for time-based repeats
                 )
             case _:
                 # For unmatched names, treat as exercise for strength workouts
@@ -122,6 +178,8 @@ def createWorkoutStep(step: dict, stepCount: list, inRepeat: bool = False):
                     category = "LEG_CURL"
                 elif "clean and jerk" in parsedStep.lower():
                     category = "OLYMPIC_LIFT"
+                elif "wall ball" in parsedStep.lower() or "wallball" in parsedStep.lower():
+                    category = "SQUAT"
                 elif "medicine ball slam" in parsedStep.lower():
                     category = "PLYO"
                 elif "ski moguls" in parsedStep.lower():
@@ -202,14 +260,49 @@ def createWorkoutStep(step: dict, stepCount: list, inRepeat: bool = False):
         if isinstance(stepDetail, list):
             # Nested structure (like warmup with children)
             parsedStepDetailDict = {}
-            # We'll use default values for the end condition
+                # We'll use default values for the end condition
             if stepType == StepType.WARMUP or stepType == StepType.COOLDOWN:
+                # For nested warmup/cooldown, we need to process the children
+                # But we'll create a simple step with lap button
                 parsedStepDetailDict = {
                     'endCondition': ConditionType.LAP_BUTTON,
-                    'endConditionValue': 10  # Default value
+                    'endConditionValue': 30.0  # Garmin uses 30.0 for lap button
                 }
+                # If there's a nested run/cardio, set category
+                if category is not None:
+                    parsedStepDetailDict['category'] = category
+                    if exerciseName is not None:
+                        parsedStepDetailDict['exerciseName'] = exerciseName
         else:
             parsedStepDetailDict = parse_stepdetail(stepDetail)
+            # Extract distance/reps info for description if not already in description
+            if isinstance(stepDetail, str) and 'description' not in parsedStepDetailDict:
+                # Check if stepDetail contains distance or reps info
+                desc_parts = []
+                if "reps" in stepDetail.lower():
+                    # Extract reps number
+                    reps_match = re.search(r'(\d+)\s*reps?', stepDetail.lower())
+                    if reps_match:
+                        desc_parts.append(reps_match.group(1))
+                elif "m" in stepDetail.lower() and "min" not in stepDetail.lower():
+                    # Extract distance in meters
+                    dist_match = re.search(r'(\d+)\s*m', stepDetail.lower())
+                    if dist_match:
+                        desc_parts.append(dist_match.group(1) + "m")
+                elif "s" in stepDetail.lower() and "sec" not in stepDetail.lower():
+                    # Extract seconds
+                    sec_match = re.search(r'(\d+)\s*s(?!\w)', stepDetail.lower())
+                    if sec_match:
+                        desc_parts.append(sec_match.group(1) + "s")
+                
+                # If we have distance/reps info and no description yet, add it
+                if desc_parts and 'description' not in parsedStepDetailDict:
+                    # If there's already a description from pipe, append to it
+                    if "|" in stepDetail:
+                        # Description already handled by parse_stepdetail
+                        pass
+                    else:
+                        parsedStepDetailDict['description'] = " ".join(desc_parts)
         
         # Add exercise metadata if this is an exercise
         if exerciseName is not None:
@@ -217,41 +310,49 @@ def createWorkoutStep(step: dict, stepCount: list, inRepeat: bool = False):
         # Add category if set (for exercises like cardio which might not have exerciseName)
         if category is not None:
             parsedStepDetailDict['category'] = category
-        # Add childStepId if we're inside a repeat
-        if inRepeat:
+        # Add childStepId if we're inside a repeat (but not for warmup/cooldown)
+        if inRepeat and stepType not in [StepType.WARMUP, StepType.COOLDOWN]:
             parsedStepDetailDict['childStepId'] = 1
         stepCount[0] += 1
         order = stepCount[0]
     return WorkoutStep(stepId=order, stepOrder=order, stepType=stepType, **parsedStepDetailDict)
 
-def createWorkoutJson(workoutName: str, steps: list):
+def createWorkoutJson(workoutName: str, steps: list, sport_type: Optional[SportType] = None):
     stepCount = [0]
-    sport_type = SportType.RUNNING  # default; adjust if yaml specifies otherwise
     
-    # Detect sport type based on step names
-    def has_strength_steps(steps):
-        for step in steps:
-            for stepName in step:
-                parsedStep, _, _ = parse_bracket(stepName)
-                if parsedStep in ["exercise", "rest", "cardio"]:
-                    return True
-                # Check if we have any common strength indicators
-                # Custom exercise names are treated as strength if not running steps
-                if parsedStep == "repeat":
-                    if has_strength_steps(step[stepName]):
+    # If sport type not specified, detect it based on step names
+    if sport_type is None:
+        sport_type = SportType.RUNNING  # default
+        
+        # Detect sport type based on step names
+        def has_strength_steps(steps):
+            for step in steps:
+                for stepName in step:
+                    parsedStep, _, _ = parse_bracket(stepName)
+                    if parsedStep in ["exercise", "rest", "cardio"]:
                         return True
-                elif parsedStep not in ["run", "warmup", "cooldown", "recovery", "repeat"]:
-                    # Unknown step type, likely a strength exercise name
-                    # Check if the step detail contains "reps" which is strength-specific
-                    stepDetail = step[stepName]
-                    if isinstance(stepDetail, str) and "reps" in stepDetail.lower():
-                        return True
-        return False
-    
-    if has_strength_steps(steps):
-        sport_type = SportType.STRENGTH
+                    # Check if we have any common strength indicators
+                    # Custom exercise names are treated as strength if not running steps
+                    if parsedStep == "repeat":
+                        if has_strength_steps(step[stepName]):
+                            return True
+                    elif parsedStep not in ["run", "warmup", "cooldown", "recovery", "repeat"]:
+                        # Unknown step type, likely a strength exercise name
+                        # Check if the step detail contains "reps" which is strength-specific
+                        stepDetail = step[stepName]
+                        if isinstance(stepDetail, str) and "reps" in stepDetail.lower():
+                            return True
+            return False
+        
+        if has_strength_steps(steps):
+            sport_type = SportType.STRENGTH
 
-    workoutSteps = createWorkoutList(steps, stepCount)
+    workoutSteps = createWorkoutList(steps, stepCount, sport_type=sport_type)
+
+    # Set subSportType for HIIT workouts
+    sub_sport_type = None
+    if sport_type == SportType.HIIT:
+        sub_sport_type = "GENERIC"
 
     workout_segment = WorkoutSegment(
         segmentOrder=1,
@@ -262,7 +363,7 @@ def createWorkoutJson(workoutName: str, steps: list):
     workout_model = WorkoutModel(
         workoutName=workoutName,
         sportType=sport_type,
-        subSportType=None,
+        subSportType=sub_sport_type,
         workoutSegments=[workout_segment],
         estimatedDistanceUnit=None,
         avgTrainingSpeed=None,
@@ -284,8 +385,28 @@ def importWorkouts(workouts: dict, toDeletePrevious: bool, conn: Client):
             for toDelete in filtered:
                 conn.deleteWorkout(toDelete)
 
-        steps = workouts[name]
-        jsonData = createWorkoutJson(name, steps)
+        workout_data = workouts[name]
+        sport_type = None
+        
+        # Support both old format (list of steps) and new format (dict with steps and optional sport)
+        if isinstance(workout_data, dict):
+            steps = workout_data.get('steps', [])
+            sport_str = workout_data.get('sport', None)
+            if sport_str:
+                sport_str_upper = sport_str.upper()
+                if sport_str_upper == 'HIIT':
+                    sport_type = SportType.HIIT
+                elif sport_str_upper == 'STRENGTH' or sport_str_upper == 'STRENGTH_TRAINING':
+                    sport_type = SportType.STRENGTH
+                elif sport_str_upper == 'RUNNING' or sport_str_upper == 'RUN':
+                    sport_type = SportType.RUNNING
+                else:
+                    logger.warning(f"Unknown sport type '{sport_str}' for workout '{name}', using auto-detection")
+        else:
+            # Old format: just a list of steps
+            steps = workout_data
+        
+        jsonData = createWorkoutJson(name, steps, sport_type)
         conn.importWorkout(jsonData)
 
 def _ensure_date(d):

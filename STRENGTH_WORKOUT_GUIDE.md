@@ -149,6 +149,7 @@ The app automatically determines exercise categories based on the exercise name 
 - "bulgarian split squat" → LUNGE
 - "good morning" → LEG_CURL
 - "clean and jerk" → OLYMPIC_LIFT
+- "wall ball" or "wallball" → SQUAT
 - "medicine ball slam" → PLYO
 - "ski moguls" → CARDIO
 - "pike push" or "push-up" → PUSH_UP

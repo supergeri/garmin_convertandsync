@@ -26,14 +26,15 @@ class WorkoutStep:
 class RepeatStep:
     stepId: int
     stepOrder: int
-    numberOfIterations: int
     workoutSteps: List[WorkoutStep] # can be nested repeat
+    numberOfIterations: Optional[int] = None  # None for time-based repeats
     stepType: StepType = StepType.REPEAT
     smartRepeat: bool = False
     childStepId: int = 1 # havent figure out this, it seems all its child step need this
     type: str = "RepeatGroupDTO"
     skipLastRestStep: bool = False
     endCondition: ConditionType = ConditionType.ITERATION_ENDS
+    endConditionValue: Optional[int] = None  # For time-based repeats (in seconds)
 
 @dataclass
 class WorkoutSegment:
