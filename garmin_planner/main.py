@@ -275,6 +275,31 @@ def createWorkoutStep(step: dict, stepCount: list, inRepeat: bool = False, sport
                         parsedStepDetailDict['exerciseName'] = exerciseName
         else:
             parsedStepDetailDict = parse_stepdetail(stepDetail)
+            # Ensure we have endCondition and endConditionValue - add defaults if missing
+            if 'endCondition' not in parsedStepDetailDict or 'endConditionValue' not in parsedStepDetailDict:
+                # Default to REPS with 10 if not parsed
+                if isinstance(stepDetail, str) and 'reps' in stepDetail.lower():
+                    # Try to extract reps number
+                    reps_match = re.search(r'(\d+)', stepDetail.lower())
+                    if reps_match:
+                        parsedStepDetailDict['endCondition'] = ConditionType.REPS
+                        parsedStepDetailDict['endConditionValue'] = int(reps_match.group(1))
+                    else:
+                        parsedStepDetailDict['endCondition'] = ConditionType.REPS
+                        parsedStepDetailDict['endConditionValue'] = 10
+                elif isinstance(stepDetail, str) and 's' in stepDetail.lower() and not 'reps' in stepDetail.lower():
+                    # Try to extract seconds
+                    sec_match = re.search(r'(\d+)s', stepDetail.lower())
+                    if sec_match:
+                        parsedStepDetailDict['endCondition'] = ConditionType.TIME
+                        parsedStepDetailDict['endConditionValue'] = int(sec_match.group(1))
+                    else:
+                        parsedStepDetailDict['endCondition'] = ConditionType.TIME
+                        parsedStepDetailDict['endConditionValue'] = 60
+                else:
+                    # Default fallback
+                    parsedStepDetailDict['endCondition'] = ConditionType.REPS
+                    parsedStepDetailDict['endConditionValue'] = 10
             # Extract distance/reps info for description if not already in description
             if isinstance(stepDetail, str) and 'description' not in parsedStepDetailDict:
                 # Check if stepDetail contains distance or reps info
