@@ -1,8 +1,18 @@
-"""FastAPI wrapper for Garmin Sync API."""
+"""
+⚠️ UNOFFICIAL GARMIN SYNC — TEST ONLY
+-------------------------------------
+This service uses an unofficial integration path for Garmin testing.
+It MUST NOT be enabled for production users.
+
+Enabled only when:
+GARMIN_UNOFFICIAL_SYNC_ENABLED=true
+"""
 from fastapi import FastAPI, HTTPException, Body
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional, List, Dict
 import logging
+import os
 
 from garmin_planner.client import Client
 from garmin_planner.main import importWorkouts, scheduleWorkouts, createWorkoutJson
@@ -11,7 +21,27 @@ from garmin_planner.model.workoutModel import SportType
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# Feature flag for unofficial Garmin sync
+USE_UNOFFICIAL = os.getenv("GARMIN_UNOFFICIAL_SYNC_ENABLED", "false") == "true"
+
+def ensure_unofficial_enabled():
+    """Ensure unofficial Garmin sync is enabled before allowing operations."""
+    if not USE_UNOFFICIAL:
+        raise HTTPException(
+            status_code=403,
+            detail="Unofficial Garmin sync is disabled in production."
+        )
+
 app = FastAPI(title="Garmin Sync API", version="0.1.0")
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000", "http://localhost:3001"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 class LoginRequest(BaseModel):
@@ -46,12 +76,18 @@ async def root():
 
 @app.get("/health")
 async def health():
-    return {"status": "healthy", "service": "garmin-sync"}
+    return {
+        "status": "healthy",
+        "service": "garmin-sync",
+        "note": "UNOFFICIAL – TEST ONLY",
+        "enabled": USE_UNOFFICIAL
+    }
 
 
 @app.post("/workouts")
 async def get_workouts(request: LoginRequest):
     """Get all workouts for a user."""
+    ensure_unofficial_enabled()
     try:
         client = Client(request.email, request.password)
         workouts = client.getAllWorkouts()
@@ -64,6 +100,7 @@ async def get_workouts(request: LoginRequest):
 @app.get("/workouts/{workout_id}")
 async def get_workout(workout_id: str, email: str, password: str):
     """Get a specific workout by ID."""
+    ensure_unofficial_enabled()
     try:
         client = Client(email, password)
         workout = client.getWorkout(workout_id)
@@ -76,6 +113,7 @@ async def get_workout(workout_id: str, email: str, password: str):
 @app.post("/workouts/import")
 async def import_workouts(request: ImportWorkoutsRequest):
     """Import workouts to Garmin Connect."""
+    ensure_unofficial_enabled()
     try:
         client = Client(request.email, request.password)
         importWorkouts(request.workouts, request.delete_same_name, client)
@@ -88,6 +126,7 @@ async def import_workouts(request: ImportWorkoutsRequest):
 @app.post("/workouts/schedule")
 async def schedule_workouts(request: ScheduleRequest):
     """Schedule workouts on Garmin Connect."""
+    ensure_unofficial_enabled()
     try:
         client = Client(request.email, request.password)
         scheduleWorkouts(request.start_from, request.workouts, client)

@@ -1,3 +1,16 @@
+# Unofficial Garmin Sync (TEST ONLY)
+
+This service uses an unofficial integration path for Garmin testing only.
+
+⚠️ **DO NOT enable this for normal production users until Garmin approval.**
+
+## Feature Flag
+
+- `GARMIN_UNOFFICIAL_SYNC_ENABLED=true` (dev/testing)
+- `GARMIN_UNOFFICIAL_SYNC_ENABLED=false` (production)
+
+---
+
 # Garmin Planner
 This is a Python program reads a YAML configuration file to create and schedule workouts on Garmin Connect. It remove the needs of manual workout management on the garmin connect web by automating the creation and scheduelling processes in bulk. 
 
