@@ -2,17 +2,23 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Copy requirements first for better caching
-COPY requirements.txt .
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt fastapi uvicorn
+# Copy requirements and install Python dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy application code
 COPY . .
 
-# Expose port 8002
+# Add src to Python path so garmin_sync_api can be imported
+ENV PYTHONPATH=/app/src:${PYTHONPATH}
+
+# Expose port
 EXPOSE 8002
 
 # Run the FastAPI application
-CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8002", "--reload"]
+CMD ["uvicorn", "garmin_sync_api.app:app", "--host", "0.0.0.0", "--port", "8002", "--reload"]
